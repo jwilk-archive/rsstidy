@@ -66,7 +66,7 @@ def do_email(options):
             h_from = 'Rzeczpospolita OnLine <nobody+rss@{host}>'.format(host=get_mailname())
             match = re.search('rp0Bpl0Cartykul0C([0-9]+)0H([0-9]+)0Bhtml', url.replace('A', ''))
             if match:
-                url = 'http://www.rp.pl/artykul/{},{}.html?print=tak'.format(*m.groups())
+                url = 'http://www.rp.pl/artykul/{},{}.html?print=tak'.format(*match.groups())
         return url
     re.sub('^URL: (.*)$', fix_url, body, flags=re.MULTILINE)
     assert url is not None
