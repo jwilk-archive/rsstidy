@@ -1,0 +1,87 @@
+#!/usr/bin/python3
+
+import argparse
+import io
+import sys
+import urllib.request
+
+import tidy
+
+default_timeout = 5
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.set_defaults(action=do_url)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--email', action='store_const', const=do_email, dest='action')
+    group.add_argument('--html', action='store_const', const=do_html, dest='action')
+    group.add_argument('--url', action='store')
+    options = parser.parse_args()
+    return options.action(options)
+
+def get_mailname():
+    try:
+        return open('/etc/mailname', 'r', encoding='ASCII').read().strip()
+    except EnvironmentError:
+        return 'localhost'
+
+def do_email(options):
+    import email.mime.multipart
+    import email.mime.text
+    import lxml.html
+    import re
+    import socket
+    socket.setdefaulttimeout(default_timeout)
+    original = email.message_from_binary_file(sys.stdin.buffer)
+    body = original.get_payload(None, True)
+    [encoding] = original.get_charsets()
+    body = body.decode(encoding, 'replace')
+    h_subject = original['Subject']
+    h_from = original['From']
+    url = None
+    def fix_url(match):
+        nonlocal url, h_from
+        url = match.group(1)
+        if url.startswith('http://rss.feedsportal.com/'):
+            h_from = 'Rzeczpospolita OnLine <nobody+rss@{host}>'.format(host=get_mailname())
+            match = re.search('rp0Bpl0Cartykul0C([0-9]+)0H([0-9]+)0Bhtml', url.replace('A', ''))
+            if match:
+                url = 'http://www.rp.pl/artykul/{},{}.html?print=tak'.format(*m.groups())
+        return url
+    re.sub('^URL: (.*)$', fix_url, body, flags=re.MULTILINE)
+    assert url is not None
+    body += '\n'
+    body = email.mime.text.MIMEText(body, 'plain', 'UTF-8');
+    message = email.mime.multipart.MIMEMultipart()
+    for (key, value) in original.items():
+       if key.lower() in ('from', 'subject', 'content-type', 'mime-version', 'content-length', 'content-transfer-encoding', 'lines'):
+           continue
+       message[key] = value;
+    message['From'] = h_from
+    message['Subject'] = h_subject
+    message.attach(body)
+    try:
+        htmlbytes = urllib.request.urlopen(url).read()
+        document = tidy.fix_html(htmlbytes)
+        htmlbytes = lxml.html.tostring(document, encoding='ASCII')
+        htmlstr = htmlbytes.decode('ASCII')
+        attachment = email.mime.text.MIMEText(htmlstr, 'html', 'US-ASCII')
+        message.attach(attachment)
+    except IOError:
+        pass
+    print(message)
+
+def do_html(options):
+    htmlbytes = sys.stdin.buffer.read()
+    document = tidy.fix_html(htmlbytes)
+    document.write(sys.stdout.buffer, encoding='ASCII')
+
+def do_url(options):
+    htmlbytes = urllib.request.urlopen(options.url).read()
+    document = tidy.fix_html(htmlbytes)
+    document.write(sys.stdout.buffer, encoding='ASCII')
+
+if __name__ == '__main__':
+    main()
+
+# vim:ts=4 sw=4 et
