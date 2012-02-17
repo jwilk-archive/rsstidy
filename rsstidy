@@ -89,7 +89,7 @@ def do_email(options):
         message.attach(attachment)
     except IOError:
         pass
-    print(message)
+    print(message.as_string(unixfrom=True))
 
 def do_html(options):
     htmlbytes = sys.stdin.buffer.read()
