@@ -89,6 +89,7 @@ def do_email(options):
         message.attach(attachment)
     except IOError:
         pass
+    message.epilogue = '\n'
     print(message.as_string(unixfrom=True))
 
 def do_html(options):
