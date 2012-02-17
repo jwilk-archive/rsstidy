@@ -73,7 +73,7 @@ def do_email(options):
     body += '\n'
     body = email.mime.text.MIMEText(body, 'plain', 'UTF-8');
     message = email.mime.multipart.MIMEMultipart()
-    for (key, value) in original.items():
+    for key, value in original.items():
         if key.lower() in ('from', 'subject', 'content-type', 'mime-version', 'content-length', 'content-transfer-encoding', 'lines'):
             continue
         message[key] = value;
