@@ -36,6 +36,8 @@ def fix_html(htmlbytes):
         htmlstr = htmlbytes
     document = lxml.html.document_fromstring(htmlstr)
     subdocument = document.find(".//div[@id='gazeta_article']")
+    if subdocument is None:
+        subdocument = document.find(".//div[@id='story']")
     if subdocument is not None:
         document = subdocument
     document = lxml.etree.ElementTree(document)
@@ -64,6 +66,7 @@ def fix_html(htmlbytes):
         "//div[@id='gazeta_article_tools']",
         "//div[@id='recommendations']",
         "//div[@id='socialNewTools']",
+        "//h3[@id='tags']",
         "//ul[@id='articleToolbar']",
         '//img',
         '//like',
