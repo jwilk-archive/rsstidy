@@ -29,6 +29,14 @@ def remove_all(document, *paths):
         for obj in document.findall(path):
             remove(obj)
 
+def pacify(obj):
+    obj.tag = 'span'
+
+def pacify_all(document, *paths):
+    for path in paths:
+        for obj in document.findall(path):
+            pacify(obj)
+
 def fix_html(htmlbytes):
     if b'charset="iso-8859-2"' in htmlbytes:
         htmlstr = htmlbytes.decode('ISO-8859-2')
@@ -68,12 +76,14 @@ def fix_html(htmlbytes):
         "//div[@id='socialNewTools']",
         "//h3[@id='tags']",
         "//ul[@id='articleToolbar']",
-        '//img',
         '//like',
         '//link',
         '//meta',
         '//script',
         '//style',
+    )
+    pacify_all(document,
+        '//img',
     )
     return document
 
