@@ -21,7 +21,6 @@
 # SOFTWARE.
 
 import argparse
-import io
 import sys
 import urllib.request
 
